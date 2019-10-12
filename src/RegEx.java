@@ -7,14 +7,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
-/**
- * 
- * Pour la semaine prochaine : faire le clone de egrep (commande linux) (la
- * réponse 10 ou 20 lignes ) utiliser la méthode des sous ensemble pour rendre
- * l'automate déterministe
- * 
- *
- */
+
+
 
 public class RegEx {
 	//COLOR STRING
@@ -34,8 +28,9 @@ public class RegEx {
 
 	static final int PARENTHESEOUVRANT = 0x16641664;
 	static final int PARENTHESEFERMANT = 0x51515151;
-	static final int BACKSLACH = 0x12345;
-	static final int DOT = 0xD07;
+	static final int BACKSLACH = 0xE1515151;
+	static final int DOT = 0xD0AC37;
+	static final int TRICKDOT = 0x54321;
 
 	static final int MAX_STATE = 100;
 	static final int MAX_TRANS = 100;
@@ -51,39 +46,61 @@ public class RegEx {
 	private static Stack<int[]> stack = new Stack<>();
 
 	// CONSTRUCTOR
-	public RegEx() {
+	private RegEx() {
 	}
 
-	public static void main(String[] args) throws Exception {
-		regEx = "babyl";
-		filePath = "sargon.txt";
-		try {
-			if (args.length >= 2) {
-				regEx = args[0];
-				System.out.print("lookin for  : "+args[0]);
-				filePath = args[1];
-				System.out.println(", in file : "+args[1]);
-			}else {
-				System.out.println("args missing, use the command : cmd REGEX FILENAME");
-				return;
-			}
-			if (args.length == 3) {
-				color = true;
-			}else {
-				color = false;
-			}
-			init_tabs();
-			RegExTree tree = parse();
-			toAutomaton(tree);
-			determinisation();
-			List<int []> positions  = match_count_advance("sargon.txt");
-			System.out.println(positions.size());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	
+	
+	
+	
+	
+	/**
+	 * 
+	 * 
+	 * 
+	 * 
+	 * @param regex			the pattern searched in the text
+	 * @param filePath		the path to file containing the text
+	 * @return				a list of arrays with the following pattern : 
+	 * 							for each match : an array [ numberOfLine , PositionOfFirstcharacter , PositionOfLastcharacter ]
+	 */
+	public static  List<int []> find (String regex , String filepath) throws Exception {
+		regEx = regex;
+		System.out.print("lookin for  : "+regex);
+		filePath = filepath;
+		System.out.println(", in file : "+filePath);
+		color = false;
+		return launchProcess();
 	}
+	
+	
+	public static  List<int []> findColor (String regex , String filepath) throws Exception {
+		regEx = regex;
+		System.out.print("lookin for  : "+regex);
+		filePath = filepath;
+		System.out.println(", in file : "+filePath);
+		color = true;
+		return launchProcess();
+	}
+	
+	private static List<int []> launchProcess () throws Exception{
+		init_tabs();
+		RegExTree tree = parse();
+		toAutomaton(tree);
+		determinisation();
+		List<int []> positions  = match_count_advance("sargon.txt");
+		System.out.println(positions.size());
+		return positions;
+	}
+	
 
-	public static void printAuto() {
+
+	/**
+	 * print function section
+	 */
+	
+	
+	private static void printAuto() {
 		System.out.print("\t");
 		for (int j = 97; j < (97 + 27); j++) {
 			System.out.print( (char)j+"\t");
@@ -117,7 +134,7 @@ public class RegEx {
 		System.out.print("\t");
 	}
 
-	public static void print_tab(int[] tab) {
+	private static void print_tab(int[] tab) {
 		System.out.print("{");
 		for (int i = 0; i < tab.length; i++) {
 			if (tab[i] != -1)
@@ -125,8 +142,33 @@ public class RegEx {
 		}
 		System.out.print("}\t");
 	}
+	
 
-	public static void init_tabs() {
+	private static void printPositions (List<int []> list) {
+		for (int [] word : list) {
+			System.out.println("at line : "+word[0]+" starts at : "+word[1]+" ends at "+word[2]);
+		}
+	}
+	
+	private static void printlist (List <Integer> list) {
+		for (Integer integer : list) {
+			System.out.print(integer+" ");
+		}
+	}
+
+	
+	
+	/**
+	 * print function section end
+	 */
+
+	
+	/**
+	 * automaton util functions
+	 */
+	
+	
+	private static void init_tabs() {
 		// init automaton & states
 		for (int i = 0; i < automaton.length; i++) {
 			for (int j = 0; j < automaton[i].length; j++) {
@@ -147,7 +189,7 @@ public class RegEx {
 
 	}
 
-	public static void init_tabs(int[][][] automaton, int[][] epsilons, int[][] states) {
+	private static void init_tabs(int[][][] automaton, int[][] epsilons, int[][] states) {
 		// init automaton & states
 		for (int i = 0; i < automaton.length; i++) {
 			for (int j = 0; j < automaton[i].length; j++) {
@@ -167,20 +209,24 @@ public class RegEx {
 		}
 
 	}
+	
+	
+	
+	
 
-	public static void toAutomaton(RegExTree tree) throws Exception {
+	private static void toAutomaton(RegExTree tree) throws Exception {
 		if (tree.subTrees.isEmpty()) {
 			if (!isLetter(tree.root)) {
 				throw new Exception();
 			}
-			if (tree.root == DOT) {
+			if(tree.root == DOT){
 				int[] s = new int[2];
 				s[0] = cpt++;
 				s[1] = cpt++;
 				addDot(s[0], s[1]);
 				stack.push(s);
-
 			}else {
+
 				int[] s = new int[2];
 				s[0] = cpt++;
 				s[1] = cpt++;
@@ -192,6 +238,9 @@ public class RegEx {
 				toAutomaton(trees);
 			}
 			switch (tree.root) {
+			case RegEx.BACKSLACH: {
+				break;
+			}
 			case RegEx.ETOILE: {
 				int[] lastValue = stack.pop();
 				clos(lastValue[0], lastValue[1]);
@@ -221,23 +270,23 @@ public class RegEx {
 
 	}
 
-	public static boolean isLetter(int root) {
-		if (root == RegEx.ALTERN || root == RegEx.CONCAT || root == RegEx.ETOILE)
+	private static boolean isLetter(int root) {
+		if (root == RegEx.ALTERN || root == RegEx.CONCAT || root == RegEx.ETOILE || root == RegEx.BACKSLACH)
 			return false;
 		return true;
 	}
 
-	public static void nothingTrans(int s1, int s2) {
+	private static void nothingTrans(int s1, int s2) {
 
 	}
 
-	public static void epsilonTrans(int s1, int s2) {
+	private static void epsilonTrans(int s1, int s2) {
 		addEpsilon(s1, s2);
 		states[s1][0] = 1;
 		states[s1][1] = 1;
 	}
 
-	public static void valueTrans(int value, int s1, int s2) {
+	private static void valueTrans(int value, int s1, int s2) {
 		int i = 0;
 		while (automaton[s1][value][i] != -1)
 			i++;
@@ -248,14 +297,14 @@ public class RegEx {
 
 	// très lourde pour les grand automates ::: technique à revoir si on veut faire
 	// des grand automates
-	public static void addEpsilon(int s1, int s2) {
+	private static void addEpsilon(int s1, int s2) {
 		int i = 0;
 		while (epsilons[s1][i] != -1)
 			i++;
 		epsilons[s1][i] = s2;
 	}
 
-	public static void addDot (int s1 , int s2) {
+	private static void addDot (int s1 , int s2) {
 		int i = 0;
 		for (int j = 0 ; j < 128 ; j ++) {
 			i = 0;
@@ -268,7 +317,7 @@ public class RegEx {
 	}
 
 
-	public static void union(int s1_1, int s1_2, int s2_1, int s2_2) {
+	private static void union(int s1_1, int s1_2, int s2_1, int s2_2) {
 		int s1 = cpt++;
 		int s2 = cpt++;
 		states[s1][0] = 1;
@@ -286,14 +335,14 @@ public class RegEx {
 		stack.push(new int[] { s1, s2 });
 	}
 
-	public static void concat(int s1_1, int s1_2, int s2_1, int s2_2) {
+	private static void concat(int s1_1, int s1_2, int s2_1, int s2_2) {
 		states[s1_2][1] = 0;
 		states[s2_1][0] = 0;
 		addEpsilon(s1_2, s2_1);
 		stack.push(new int[] { s1_1, s2_2 });
 	}
 
-	public static void clos(int s1_1, int s1_2) {
+	private static void clos(int s1_1, int s1_2) {
 		int s1 = cpt++;
 		int s2 = cpt++;
 		states[s1][0] = 1;
@@ -309,7 +358,7 @@ public class RegEx {
 		stack.push(new int[] { s1, s2 });
 	}
 
-	public static void plus (int s1_1, int s1_2) {
+	private static void plus (int s1_1, int s1_2) {
 		int s1 = cpt++;
 		int s2 = cpt++;
 		states[s1][0] = 1;
@@ -323,9 +372,15 @@ public class RegEx {
 		addEpsilon(s1_2, s2);
 		stack.push(new int[] { s1, s2 });
 	}
+	
+	
+	/**
+	 *	automaton util functions end  
+	 */
+	
 
 
-	public static boolean match(String fileName) throws Exception {
+	private static boolean match(String fileName) throws Exception {
 		BufferedReader bf = new BufferedReader(new FileReader(new File(fileName)));
 		String line;
 		int pos = 0;
@@ -350,7 +405,7 @@ public class RegEx {
 		return false;
 	}
 
-	public static int match_count(String fileName) throws Exception {
+	private static int match_count(String fileName) throws Exception {
 		BufferedReader bf = new BufferedReader(new FileReader(new File(fileName)));
 		String line;
 		int nbMatch = 0;
@@ -382,54 +437,7 @@ public class RegEx {
 	}
 
 
-
-
-	/*
-	 * juste pour colmater l'erreur des automates
-	 */
-
-	public static int intrusifChange () {
-		for (int i = 0 ; i < cpt ; i ++) {
-			if (automaton[i][0][0] == automaton[i][1][0] 
-					&& automaton[i][1][0] == automaton[i][2][0]
-							&& automaton[i][2][0] == automaton[i][3][0]
-									&& automaton[i][3][0] == automaton[i][4][0])
-			{
-				int intrusif = automaton[i][0][0];
-				for (int j = 0 ; j < automaton[i].length ; j ++) {
-					if (automaton[i][j][0] != intrusif) {
-						automaton[i][j][1] = intrusif;
-					}
-				}
-			}
-		}
-		return 1;
-	}
-
-
-
-	public static void printlist (List <Integer> list) {
-		for (Integer integer : list) {
-			System.out.print(integer+" ");
-		}
-	}
-
-	/**
-	 * return a list like : <[ line number , starting character , ending character ]>
-	 * @param fileName
-	 * @return
-	 * @throws Exception
-	 */
-
-
-	public static void match_rec (String line) throws Exception {
-		if (line == null)
-			return;
-
-	}
-
-
-	public static List<int []> match_count_advance(String fileName) throws Exception {
+	private static List<int []> match_count_advance(String fileName) throws Exception {
 		List<int []> positions = new ArrayList<>();
 		BufferedReader bf = new BufferedReader(new FileReader(new File(fileName)));
 		String line;
@@ -448,10 +456,18 @@ public class RegEx {
 			printLine = new StringBuilder();
 			printWord = new StringBuilder();
 			for (int i = 0; i < line.length(); i++) {
+				
+				// empty word treatment ex : (ANNYTHING)* -- matched words are : ANNYTHING and empty word
+				if (states[pos][1] == 1 && imlast(line , i , pos)) {
+					write = true;
+					nbMatch++;
+					positions.add(new int [] {l , start , i});
+				}
 				// ONE STATE REACHED AT TIME
 				int c = (int)line.charAt(i);
+				
+				// deleting all non ASCII character
 				if (c >= 256 || c < 0) {
-
 					if (printWord.length() > 0) {
 						printLine.append(printWord.charAt(0));
 						printWord = new StringBuilder();
@@ -500,7 +516,7 @@ public class RegEx {
 		return positions;
 	}
 
-	public static boolean imlast (String line , int index , int pos) {
+	private static boolean imlast (String line , int index , int pos) {
 		if (index == line.length() - 1)
 			return true;
 		index++;
@@ -513,14 +529,9 @@ public class RegEx {
 
 	}
 
-	public static void printPositions (List<int []> list) {
-		for (int [] word : list) {
-			System.out.println("at line : "+word[0]+" starts at : "+word[1]+" ends at "+word[2]);
-		}
-	}
 
 
-	public static void determinisation() {
+	private static void determinisation() {
 		int[][][] new_automaton = new int[MAX_STATE][256][MAX_TRANS];
 		int[][] new_eplisons = new int[MAX_STATE][MAX_TRANS];
 		int[][] new_states = new int[MAX_STATE][2];
@@ -575,7 +586,7 @@ public class RegEx {
 		states = new_states;
 	}
 
-	public static ArrayList<Integer> computeState (int [] tab) {
+	private static ArrayList<Integer> computeState (int [] tab) {
 		ArrayList<Integer> array = new ArrayList<Integer>();
 		for (int i : tab) {
 			if (i == -1)
@@ -585,7 +596,7 @@ public class RegEx {
 		return array;
 	}
 
-	public static int[][][] reLabel(int[][][] auto, List<Integer>[] labels) {
+	private static int[][][] reLabel(int[][][] auto, List<Integer>[] labels) {
 		int[][][] returnValue = new int[auto.length][auto[0].length][auto[0][0].length];
 		for (int i = 0; i < returnValue.length; i++) {
 			for (int j = 0; j < returnValue[0].length; j++) {
@@ -605,7 +616,7 @@ public class RegEx {
 		return returnValue;
 	}
 
-	public static int index(List<Integer>[] labels, int[] tab) {
+	private static int index(List<Integer>[] labels, int[] tab) {
 		// we don't need to go until the end
 		for (int i = 0; i < labels.length; i++) {
 			if (equalTab(labels[i], tab))
@@ -621,7 +632,7 @@ public class RegEx {
 	 * @param tab
 	 * @return
 	 */
-	public static boolean equalTab(List<Integer> label, int[] tab) {
+	private static boolean equalTab(List<Integer> label, int[] tab) {
 		if (label == null) return false;
 		for (int i : tab) {
 			if (i == -1)
@@ -633,7 +644,7 @@ public class RegEx {
 		return true;
 	}
 
-	public static boolean isnotIn(int[] tab, int size, int value) {
+	private static boolean isnotIn(int[] tab, int size, int value) {
 		for (int i = 0; i < size; i++) {
 			if (tab[i] == value) {
 				return false;
@@ -642,7 +653,7 @@ public class RegEx {
 		return true;
 	}
 
-	public static void printNewState(List<Integer>[] list, int size) {
+	private static void printNewState(List<Integer>[] list, int size) {
 		for (int i = 0; i < size; i++) {
 			System.err.print(i + " -> ");
 			for (int j : list[i])
@@ -653,7 +664,7 @@ public class RegEx {
 
 
 
-	public static boolean isIn(int [] tab , int value) {
+	private static boolean isIn(int [] tab , int value) {
 		boolean ret = false;
 		for (int i : tab) {
 			if (i == -1)
@@ -670,7 +681,7 @@ public class RegEx {
 	/**
 	 * TODEL 
 	 */
-	public static int computeSize (int [] tab) {
+	private static int computeSize (int [] tab) {
 		int i = 0;
 		while (tab[i] != -1)
 			i++;
@@ -678,7 +689,7 @@ public class RegEx {
 	}
 
 
-	public static boolean is_new_state(List<Integer>[] allStates, int[] foundedState, int sizeAll, int sizeFounded) {
+	private static boolean is_new_state(List<Integer>[] allStates, int[] foundedState, int sizeAll, int sizeFounded) {
 		sizeFounded = computeSize(foundedState);
 		boolean is_new = false;
 		for (int i = 0; i < sizeAll; i++) {
@@ -700,7 +711,7 @@ public class RegEx {
 	 * @param sizeb added because of my previous choices
 	 * @return
 	 */
-	public static boolean isIncluded(List<Integer> ensA, int[] ensB, int sizeB) {
+	private static boolean isIncluded(List<Integer> ensA, int[] ensB, int sizeB) {
 		for (int i = 0; i < sizeB; i++) {
 			if (!ensA.contains(ensB[i]))
 				return false;
@@ -708,7 +719,7 @@ public class RegEx {
 		return true;
 	}
 
-	public static boolean isEqualTo (List<Integer> ensA , int [] ensB , int sizeB) {
+	private static boolean isEqualTo (List<Integer> ensA , int [] ensB , int sizeB) {
 		if (ensA.size() != sizeB)
 			return false;
 		for (int i = 0 ; i < sizeB ; i ++) {
@@ -718,7 +729,7 @@ public class RegEx {
 		return ensA.size() == sizeB;
 	}
 
-	public static void test_isEqualTo () {
+	private static void test_isEqualTo () {
 
 		int [] ensB = new int [] {1,2,3,4, 5};
 		ArrayList<Integer> ensA = new ArrayList<>();
@@ -734,7 +745,7 @@ public class RegEx {
 	 * get all transition labels existing in our automaton for Ex : for ac*|b it
 	 * returns a list [ 97 , 98 , 99 ] ascci equavalent of [ a , b , c ]
 	 */
-	public static ArrayList<Integer> getTransitions() {
+	private static ArrayList<Integer> getTransitions() {
 		Set<Integer> transitions = new HashSet<Integer>();
 		for (int i = 0; i < cpt; i++) {
 			for (int j = 0; j < 256; j++) {
@@ -746,7 +757,7 @@ public class RegEx {
 		return toArrayList(transitions);
 	}
 
-	public static ArrayList<Integer> toArrayList (Set<Integer> set ) {
+	private static ArrayList<Integer> toArrayList (Set<Integer> set ) {
 		ArrayList<Integer> arraylist = new ArrayList<>();
 		for (Integer integer : set) {
 			arraylist.add(integer);
@@ -762,7 +773,7 @@ public class RegEx {
 	 * 
 	 * @return
 	 */
-	public static List<Integer>[] getStartingDeterminisation() {
+	private static List<Integer>[] getStartingDeterminisation() {
 		List<Integer>[] returnValue = new ArrayList[MAX_STATE];
 		int ac = 0;
 		//		List<Integer> local = null;
@@ -789,7 +800,7 @@ public class RegEx {
 		return returnValue;
 	}
 
-	public static ArrayList<Integer> tabToList(int[] tab, int size) {
+	private static ArrayList<Integer> tabToList(int[] tab, int size) {
 		ArrayList<Integer> list = new ArrayList<Integer>();
 		for (int i = 0; i < size; i++) {
 			list.add(tab[i]);
@@ -808,7 +819,7 @@ public class RegEx {
 	 * @param state
 	 * @return
 	 */
-	public static boolean isnotIn(List<Integer>[] list, int size, int state) {
+	private static boolean isnotIn(List<Integer>[] list, int size, int state) {
 		for (List<Integer> l : list) {
 			if (l == null)
 				return true;
@@ -818,8 +829,18 @@ public class RegEx {
 		return true;
 	}
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	/**
-	 * code du prof , à changer si j'ai le temps
+	 * original code downloaded.
 	 */
 
 	// FROM REGEX TO SYNTAX TREE
@@ -836,12 +857,14 @@ public class RegEx {
 		for (int i = 0; i < regEx.length(); i++)
 			result.add(new RegExTree(charToRoot(regEx.charAt(i)), new ArrayList<RegExTree>()));
 
+		
+		
 		return parse(result);
 	}
 
 	private static int charToRoot(char c) {
 		if (c == '.')
-			return DOT;
+			return (int) '.';
 		if (c == '*')
 			return ETOILE;
 		if (c == '+')
@@ -853,15 +876,17 @@ public class RegEx {
 		if (c == ')')
 			return PARENTHESEFERMANT;
 		if (c == '\\')
-			return BACKSLACH;
+			return (int) '\\';
 		return (int) c;
 	}
 
 	private static RegExTree parse(ArrayList<RegExTree> result) throws Exception {
-		//		while (containDot(result))
-		//			result = processDot(result);
 		while (containParenthese(result))
 			result = processParenthese(result);
+		while (containBackslach(result))
+			result = processBackslach(result);
+		while (containDot(result))
+			result = processDot(result);
 		while (containEtoile(result))
 			result = processEtoile(result);
 		while (containPlus(result))
@@ -884,6 +909,72 @@ public class RegEx {
 		return false;
 	}
 
+	
+	/**
+	 * section i added
+	 */
+	
+	
+	private static boolean containBackslach (ArrayList<RegExTree> trees) {
+		for (RegExTree t : trees) {
+			if ( t.root == '\\' ) 
+				return true;
+			}
+		return false;
+	}
+	
+	private static boolean containDot (ArrayList<RegExTree> trees) {
+		for (RegExTree t : trees)
+			if (t.root == (int) '.')
+				return true;
+		return false;
+	}
+	
+	private static ArrayList<RegExTree> processDot (ArrayList<RegExTree> trees) throws Exception {
+		ArrayList<RegExTree> result = new ArrayList<RegExTree>();
+		boolean found = false;
+		for (RegExTree t : trees) {
+			if (!found && t.root == (int)'.' && t.subTrees.isEmpty()) {
+				found = true;
+				ArrayList<RegExTree> subTrees = new ArrayList<RegExTree>();
+				result.add(new RegExTree(DOT, subTrees));
+			} else {
+				result.add(t);
+			}
+		}
+		return result;
+	}
+
+	private static ArrayList<RegExTree> processBackslach (ArrayList<RegExTree> trees) throws Exception {
+		ArrayList<RegExTree> result = new ArrayList<RegExTree>();
+		boolean found = false;
+		boolean dontAdd = true;
+		for (RegExTree t : trees) {
+			if ( t.root == (int) '\\' && t.subTrees.isEmpty()) {
+				if (trees.size()-1 == trees.indexOf(t))
+					throw new Exception();
+				found = true;
+				dontAdd = false;
+				RegExTree last = trees.get(trees.indexOf(t)+1);
+				ArrayList<RegExTree> subTrees = new ArrayList<RegExTree>();
+				subTrees.add(last);
+				result.add(new RegExTree(BACKSLACH, subTrees));
+			} else {
+				if (dontAdd)
+					result.add(t);
+				dontAdd = true;
+			}
+			
+			
+		}
+		return result;
+	}
+	
+	
+	
+	/**
+	 *	section i added end 
+	 */
 
 
 	private static ArrayList<RegExTree> processParenthese(ArrayList<RegExTree> trees) throws Exception {
@@ -939,28 +1030,6 @@ public class RegEx {
 		}
 		return result;
 	}
-
-
-	//	private static boolean containDot (ArrayList<RegExTree> trees) {
-	//		for (RegExTree tree : trees) {
-	//			if (tree.root == DOT)
-	//				return true;
-	//		}
-	//		return false;
-	//	}
-	//	
-	//	private static ArrayList<RegExTree> processDot (ArrayList<RegExTree> trees ) throws Exception{
-	//		ArrayList<RegExTree> result = new ArrayList<RegExTree>();
-	//		System.out.println("process Dot");
-	//		for (RegExTree t : trees) {
-	//			if (t.root == '.') {
-	//				result.add(new RegExTree(DOT, null));
-	//			}else {
-	//				result.add(t);
-	//			}
-	//		}
-	//		return result;
-	//	}
 
 
 	private static boolean containConcat(ArrayList<RegExTree> trees) {
@@ -1022,7 +1091,7 @@ public class RegEx {
 		return false;
 	}
 
-	public static ArrayList<RegExTree> processPlus(ArrayList<RegExTree> trees) throws Exception {
+	private static ArrayList<RegExTree> processPlus(ArrayList<RegExTree> trees) throws Exception {
 		ArrayList<RegExTree> result = new ArrayList<RegExTree>();
 		boolean found = false;
 		for (RegExTree t : trees) {
@@ -1134,6 +1203,8 @@ class RegExTree {
 			return "|";
 		if (root == RegEx.DOT)
 			return ".";
+		if (root == RegEx.BACKSLACH)
+			return "\\";
 		return Character.toString((char) root);
 	}
 }
