@@ -21,13 +21,16 @@ public class RegEx {
 
 	// MACROS
 	static final int CONCAT = 0xC04CA7;
-	static final int ETOILE = 0xE7011E;
+	static final int ETOILE = 0x2a;
+	static final int OPETOILE = 0x3b21;
 	static final int ALTERN = 0xA17E54;
 	static final int PROTECTION = 0xBADDAD;
 	static final int PLUS = 0x2b;
 
-	static final int PARENTHESEOUVRANT = 0x16641664;
-	static final int PARENTHESEFERMANT = 0x51515151;
+	static final int PARENTHESEOUVRANT = 0x28;
+//	static final int OUVRANTEFFECTIF = 
+//	static final int FERMANTEFFECTIF = 
+	static final int PARENTHESEFERMANT = 0x29;
 	static final int BACKSLACH = 0xE1515151;
 	static final int DOT = 0xD0AC37;
 	static final int TRICKDOT = 0x54321;
@@ -241,7 +244,7 @@ public class RegEx {
 			case RegEx.BACKSLACH: {
 				break;
 			}
-			case RegEx.ETOILE: {
+			case RegEx.OPETOILE: {
 				int[] lastValue = stack.pop();
 				clos(lastValue[0], lastValue[1]);
 				break;
@@ -271,7 +274,7 @@ public class RegEx {
 	}
 
 	private static boolean isLetter(int root) {
-		if (root == RegEx.ALTERN || root == RegEx.CONCAT || root == RegEx.ETOILE || root == RegEx.BACKSLACH)
+		if (root == RegEx.ALTERN || root == RegEx.CONCAT || root == RegEx.OPETOILE || root == RegEx.BACKSLACH)
 			return false;
 		return true;
 	}
@@ -840,7 +843,7 @@ public class RegEx {
 	
 	
 	/**
-	 * original code downloaded.
+	 * original code downloaded. We operated some modifications on it
 	 */
 
 	// FROM REGEX TO SYNTAX TREE
@@ -881,10 +884,10 @@ public class RegEx {
 	}
 
 	private static RegExTree parse(ArrayList<RegExTree> result) throws Exception {
-		while (containParenthese(result))
-			result = processParenthese(result);
 		while (containBackslach(result))
 			result = processBackslach(result);
+		while (containParenthese(result))
+			result = processParenthese(result);
 		while (containDot(result))
 			result = processDot(result);
 		while (containEtoile(result))
@@ -1007,7 +1010,7 @@ public class RegEx {
 
 	private static boolean containEtoile(ArrayList<RegExTree> trees) {
 		for (RegExTree t : trees)
-			if (t.root == ETOILE && t.subTrees.isEmpty())
+			if (t.root == (int) '*' && t.subTrees.isEmpty())
 				return true;
 		return false;
 	}
@@ -1023,7 +1026,7 @@ public class RegEx {
 				RegExTree last = result.remove(result.size() - 1);
 				ArrayList<RegExTree> subTrees = new ArrayList<RegExTree>();
 				subTrees.add(last);
-				result.add(new RegExTree(ETOILE, subTrees));
+				result.add(new RegExTree(OPETOILE, subTrees));
 			} else {
 				result.add(t);
 			}
